@@ -7,9 +7,22 @@
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
 bool is_game_running = false;
-SDL_Point vertices[] = { {30,50}, {50,30}, {60,50}, {50,30}};
+int last_frame_time = 0;
+SDL_Point vertices[4] = { {30,50}, {50,30}, {60,50}, {50,30}};
 
-void process_input(void) {
+void move_ship(int x, int y) {
+  // Get a delta time factor converted to seconds to be used to update my objects later
+  float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0;
+
+  last_frame_time = SDL_GetTicks();
+  
+  for (int i = 0; i < 4; i++) {
+    vertices[i].x += x * delta_time;
+    vertices[i].y += y * delta_time;
+  }
+}
+
+void handle_input_event(void) {
   SDL_Event event;
   SDL_PollEvent(&event);
 
@@ -18,8 +31,14 @@ void process_input(void) {
       is_game_running = false;
       break;
     case SDL_KEYDOWN:
-      if (event.key.keysym.sym == SDLK_ESCAPE)
+      if (event.key.keysym.sym == SDLK_ESCAPE) {
         is_game_running = false;
+        break;
+      }
+      if (event.key.keysym.sym == SDLK_UP) {
+        move_ship(10,10);
+        break;
+      }
       break;
     default:
       break;
@@ -29,11 +48,15 @@ void process_input(void) {
 void setup(void) {};
 
 void update(void) {
+  // Get a delta time factor converted to seconds to be used to update my objects later
+  float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
+
+  last_frame_time = SDL_GetTicks();
+  
   for (int i = 0; i < 4; i++) {
-    vertices[i].x += 1;
-    vertices[i].y += 1;
+    vertices[i].x += 30 * delta_time;
+    vertices[i].y += 30 * delta_time;
   }
-  SDL_Delay(1);
 };
 
 void render(void) {
@@ -41,14 +64,7 @@ void render(void) {
   SDL_RenderClear(renderer);
 
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-  // SDL_RenderDrawLine(renderer, 400, 100, 200, 400);
-  // SDL_RenderDrawLine(renderer, 200, 400, 600, 400);
-  // SDL_RenderDrawLine(renderer, 600, 400, 400, 100);
-
-  // SDL_RenderDrawLine(renderer, 30, 50, 50, 30);
-  // SDL_RenderDrawLine(renderer, 60, 50, 50, 30);
-  // SDL_RenderDrawLine(renderer, 160, 10, 50, 230);
-  uint8_t vertices_number = sizeof(vertices)/sizeof(vertices[0]);
+  int vertices_number = sizeof(vertices)/sizeof(vertices[0]);
   SDL_RenderDrawLines(renderer, vertices, vertices_number);
 
   // Buffer swap
@@ -71,14 +87,14 @@ bool initialize_window(void) {
   );
 
   if (!window) {
-    fprintf(stderr, "Error creating  SDL window.\n");
+    fprintf(stderr, "Error creating SDL window.\n");
     return false;
   }
 
   renderer = SDL_CreateRenderer(window, -1, 0);
 
   if (!renderer) {
-    fprintf(stderr, "Error creating  SDL renderer.\n");
+    fprintf(stderr, "Error creating SDL renderer.\n");
     return false;
   }
 
@@ -97,7 +113,7 @@ int main() {
   setup();
 
   while(is_game_running) {
-    process_input();
+    handle_input_event();
     update();
     render();
   }
