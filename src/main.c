@@ -7,6 +7,7 @@
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
 bool is_game_running = false;
+SDL_Point vertices[] = { {30,50}, {50,30}, {60,50}, {50,30}};
 
 void process_input(void) {
   SDL_Event event;
@@ -25,12 +26,37 @@ void process_input(void) {
   }
 }
 
-void setup() {};
-void update() {};
-void render() {};
+void setup(void) {};
+
+void update(void) {
+  for (int i = 0; i < 4; i++) {
+    vertices[i].x += 1;
+    vertices[i].y += 1;
+  }
+  SDL_Delay(1);
+};
+
+void render(void) {
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+  SDL_RenderClear(renderer);
+
+  SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+  // SDL_RenderDrawLine(renderer, 400, 100, 200, 400);
+  // SDL_RenderDrawLine(renderer, 200, 400, 600, 400);
+  // SDL_RenderDrawLine(renderer, 600, 400, 400, 100);
+
+  // SDL_RenderDrawLine(renderer, 30, 50, 50, 30);
+  // SDL_RenderDrawLine(renderer, 60, 50, 50, 30);
+  // SDL_RenderDrawLine(renderer, 160, 10, 50, 230);
+  uint8_t vertices_number = sizeof(vertices)/sizeof(vertices[0]);
+  SDL_RenderDrawLines(renderer, vertices, vertices_number);
+
+  // Buffer swap
+  SDL_RenderPresent(renderer);
+};
 
 bool initialize_window(void) {
-  if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+  if (SDL_Init(SDL_INIT_GAME) != 0) {
     fprintf(stderr, "Error initializing SDL.\n");
     return false;
   }
