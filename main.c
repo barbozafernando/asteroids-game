@@ -7,14 +7,6 @@
 #include <time.h>
 
 ///////////////////////////////////////////////////////////////////////////////
-// Global variables
-///////////////////////////////////////////////////////////////////////////////
-int game_is_running = false;
-int last_frame_time = 0;
-SDL_Window *window = NULL;
-SDL_Renderer *renderer = NULL;
-
-///////////////////////////////////////////////////////////////////////////////
 // Declare two game objects for the player and the target
 ///////////////////////////////////////////////////////////////////////////////
 struct GameObject {
@@ -26,6 +18,16 @@ struct GameObject {
   f32 vel_y;
 } player, target;
 typedef struct GameObject GameObject;
+
+///////////////////////////////////////////////////////////////////////////////
+// Global variables
+///////////////////////////////////////////////////////////////////////////////
+int game_is_running = false;
+int last_frame_time = 0;
+SDL_Window *window = NULL;
+SDL_Renderer *renderer = NULL;
+GameObject player = {0};
+GameObject target = {0};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Function to initialize our SDL window
@@ -50,38 +52,39 @@ int initialize_window(void) {
   return true;
 }
 
+void spawn_target(void) {
+  srand(time(NULL));
+  target.x = rand() % (WINDOW_WIDTH + 1);
+  target.y = rand() % (WINDOW_HEIGHT + 1);
+  target.width = TARGET_SIZE;
+  target.height = TARGET_SIZE;
+  target.vel_x = 0;
+  target.vel_y = 0;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Setup function that runs once at the beginning of our program
 ///////////////////////////////////////////////////////////////////////////////
-GameObject setup(void) {
+void setup(void) {
   SDL_DisplayMode DM;
   SDL_GetCurrentDisplayMode(0, &DM);
 
   // Initialize the player object
   player.x = (WINDOW_WIDTH >> 1);
   player.y = (WINDOW_HEIGHT >> 1);
-  player.width = 20;
-  player.height = 20;
-  player.vel_x = 80;
-  player.vel_y = 80;
-
-  srand(time(NULL));
+  player.width = PLAYER_SIZE;
+  player.height = PLAYER_SIZE;
+  player.vel_x = PLAYER_SPEED;
+  player.vel_y = PLAYER_SPEED;
 
   // Initialize the target object
-  target.x = rand() % (WINDOW_WIDTH + 1);
-  target.y = rand() % (WINDOW_HEIGHT + 1);
-  target.width = 10;
-  target.height = 10;
-  target.vel_x = 0;
-  target.vel_y = 0;
-
-  return player;
+  spawn_target();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Update function with a fixed time step
 ///////////////////////////////////////////////////////////////////////////////
-void update(void) {
+void update() {
   // Get delta_time factor converted to seconds to be used to update objects
   // f32 delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0;
 
@@ -97,7 +100,7 @@ void update(void) {
     player.x = 0;
     player.vel_x = 0;
   }
-  if (player.x + player.height > WINDOW_WIDTH) {
+  if (player.x + player.width > WINDOW_WIDTH) {
     player.x = WINDOW_WIDTH - player.width;
     player.vel_x = 0;
   }
@@ -105,9 +108,18 @@ void update(void) {
     player.y = 0;
     player.vel_y = 0;
   }
+
   if (player.y + player.height > WINDOW_HEIGHT) {
     player.y = WINDOW_HEIGHT - player.height;
     player.vel_y = 0;
+  }
+
+  if ((player.x + player.width >= target.x) &&
+      (target.x + target.width >= player.x) &&
+      (player.y + player.height >= target.y) &&
+      (target.y + target.height >= player.y)) {
+
+    spawn_target();
   }
 }
 
@@ -120,7 +132,7 @@ void render(void) {
 
   // Draw a rectangle for the player object
   SDL_Rect player_rect = {(u16)player.x, (u16)player.y, (u16)player.width,
-                        (u16)player.height};
+                          (u16)player.height};
 
   SDL_Rect target_rect = {(u16)target.x, (u16)target.y, (u16)target.width,
                           (u16)target.height};
@@ -145,7 +157,7 @@ void destroy_window(void) {
 ///////////////////////////////////////////////////////////////////////////////
 // Function to poll SDL events and process keyboard input
 ///////////////////////////////////////////////////////////////////////////////
-void process_input(GameObject *game_obj) {
+void process_input() {
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
     switch (event.type) {
@@ -157,28 +169,28 @@ void process_input(GameObject *game_obj) {
         game_is_running = false;
       }
       if (event.key.keysym.sym == SDLK_LEFT) {
-        if (player.vel_x == 0){ 
+        if (player.vel_x == 0) {
           player.vel_x = 80;
         }
-        player.x += player.vel_x * -PLAYER_SPEED;
+        player.x += player.vel_x * -.3;
       }
       if (event.key.keysym.sym == SDLK_RIGHT) {
-        if (player.vel_x == 0){ 
+        if (player.vel_x == 0) {
           player.vel_x = 80;
         }
-        player.x += player.vel_x * PLAYER_SPEED;
+        player.x += player.vel_x * .3;
       }
       if (event.key.keysym.sym == SDLK_UP) {
-        if (player.vel_y == 0){ 
+        if (player.vel_y == 0) {
           player.vel_y = 80;
         }
-        player.y += player.vel_y * -PLAYER_SPEED;
+        player.y += player.vel_y * -.3;
       }
       if (event.key.keysym.sym == SDLK_DOWN) {
-        if (player.vel_y == 0){ 
+        if (player.vel_y == 0) {
           player.vel_y = 80;
         }
-        player.y += player.vel_y * PLAYER_SPEED;
+        player.y += player.vel_y * .3;
       }
       break;
     }
@@ -188,10 +200,10 @@ void process_input(GameObject *game_obj) {
 int main(int argc, char **args) {
   game_is_running = initialize_window();
 
-  GameObject game_obj = setup();
+  setup();
 
   while (game_is_running) {
-    process_input(&game_obj);
+    process_input();
     update();
     render();
   }
