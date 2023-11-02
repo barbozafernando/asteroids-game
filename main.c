@@ -1,124 +1,175 @@
+#include "constants.h"
+#include <SDL2/SDL.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <SDL2/SDL.h>
-#include "constants.h"
 
-SDL_Window* window = NULL;
-SDL_Renderer* renderer = NULL;
-bool is_game_running = false;
+///////////////////////////////////////////////////////////////////////////////
+// Global variables
+///////////////////////////////////////////////////////////////////////////////
+int game_is_running = false;
 int last_frame_time = 0;
-SDL_Point vertices[4] = { {30,50}, {50,30}, {60,50}, {50,30}};
+SDL_Window *window = NULL;
+SDL_Renderer *renderer = NULL;
 
-void move_ship(int x, int y) {
-  // Get a delta time factor converted to seconds to be used to update my objects later
+///////////////////////////////////////////////////////////////////////////////
+// Declare two game objects for the ball and the paddle
+///////////////////////////////////////////////////////////////////////////////
+struct game_object {
+  float x;
+  float y;
+  float width;
+  float height;
+  float vel_x;
+  float vel_y;
+} ball, paddle;
+
+///////////////////////////////////////////////////////////////////////////////
+// Function to initialize our SDL window
+///////////////////////////////////////////////////////////////////////////////
+int initialize_window(void) {
+  if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+    fprintf(stderr, "Error initializing SDL.\n");
+    return false;
+  }
+  window = SDL_CreateWindow("A simple game loop using C & SDL",
+                            SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                            WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+  if (!window) {
+    fprintf(stderr, "Error creating SDL Window.\n");
+    return false;
+  }
+  renderer = SDL_CreateRenderer(window, -1, 0);
+  if (!renderer) {
+    fprintf(stderr, "Error creating SDL Renderer.\n");
+    return false;
+  }
+  return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Setup function that runs once at the beginning of our program
+///////////////////////////////////////////////////////////////////////////////
+struct game_object setup(void) {
+  SDL_DisplayMode DM;
+  SDL_GetCurrentDisplayMode(0, &DM);
+
+  // Initialize the ball object moving down at a constant velocity
+  ball.x = (WINDOW_WIDTH / 2.0);
+  ball.y = (WINDOW_HEIGHT / 2.0);
+  ball.width = 20;
+  ball.height = 20;
+  ball.vel_x = 80;
+  ball.vel_y = 80;
+
+  return ball;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Update function with a fixed time step
+///////////////////////////////////////////////////////////////////////////////
+void update(void) {
+  // Get delta_time factor converted to seconds to be used to update objects
   float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0;
 
+  // Store the milliseconds of the current frame to be used in the next one
   last_frame_time = SDL_GetTicks();
-  
-  for (int i = 0; i < 4; i++) {
-    vertices[i].x += x * delta_time;
-    vertices[i].y += y * delta_time;
+
+  // Move ball as a function of delta time
+  // ball.x += ball.vel_x * delta_time;
+  // ball.y += ball.vel_y * delta_time;
+
+  // Check for ball collision with the window borders
+  if (ball.x < 0) {
+    ball.x = 0;
+    ball.vel_x = -ball.vel_x;
+  }
+  if (ball.x + ball.height > WINDOW_WIDTH) {
+    ball.x = WINDOW_WIDTH - ball.width;
+    ball.vel_x = -ball.vel_x;
+  }
+  if (ball.y < 0) {
+    ball.y = 0;
+    ball.vel_y = -ball.vel_y;
+  }
+  if (ball.y + ball.height > WINDOW_HEIGHT) {
+    ball.y = WINDOW_HEIGHT - ball.height;
+    ball.vel_y = -ball.vel_y;
   }
 }
 
-void handle_input_event(void) {
-  SDL_Event event;
-  SDL_PollEvent(&event);
-
-  switch(event.type) {
-    case SDL_QUIT:
-      is_game_running = false;
-      break;
-    case SDL_KEYDOWN:
-      if (event.key.keysym.sym == SDLK_ESCAPE) {
-        is_game_running = false;
-        break;
-      }
-      if (event.key.keysym.sym == SDLK_UP) {
-        move_ship(10,10);
-        break;
-      }
-      break;
-    default:
-      break;
-  }
-}
-
-void setup(void) {};
-
-void update(void) {
-  // Get a delta time factor converted to seconds to be used to update my objects later
-  float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
-
-  last_frame_time = SDL_GetTicks();
-  
-  for (int i = 0; i < 4; i++) {
-    vertices[i].x += 30 * delta_time;
-    vertices[i].y += 30 * delta_time;
-  }
-};
-
+///////////////////////////////////////////////////////////////////////////////
+// Render function to draw game objects in the SDL window
+///////////////////////////////////////////////////////////////////////////////
 void render(void) {
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   SDL_RenderClear(renderer);
 
+  // Draw a rectangle for the ball object
+  SDL_Rect ball_rect = {(int)ball.x, (int)ball.y, (int)ball.width,
+                        (int)ball.height};
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-  int vertices_number = sizeof(vertices)/sizeof(vertices[0]);
-  SDL_RenderDrawLines(renderer, vertices, vertices_number);
+  SDL_RenderFillRect(renderer, &ball_rect);
 
-  // Buffer swap
   SDL_RenderPresent(renderer);
-};
-
-bool initialize_window(void) {
-  if (SDL_Init(SDL_INIT_GAME) != 0) {
-    fprintf(stderr, "Error initializing SDL.\n");
-    return false;
-  }
-
-  window = SDL_CreateWindow(
-    "Asteroids",
-    SDL_WINDOWPOS_CENTERED,
-    SDL_WINDOWPOS_CENTERED,
-    WINDOW_WIDTH,
-    WINDOW_HEIGHT,
-    SDL_WINDOW_SHOWN
-  );
-
-  if (!window) {
-    fprintf(stderr, "Error creating SDL window.\n");
-    return false;
-  }
-
-  renderer = SDL_CreateRenderer(window, -1, 0);
-
-  if (!renderer) {
-    fprintf(stderr, "Error creating SDL renderer.\n");
-    return false;
-  }
-
-  return true;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Function to destroy SDL window and renderer
+///////////////////////////////////////////////////////////////////////////////
 void destroy_window(void) {
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();
 }
 
-int main() {
-  is_game_running = initialize_window();
+///////////////////////////////////////////////////////////////////////////////
+// Function to poll SDL events and process keyboard input
+///////////////////////////////////////////////////////////////////////////////
+void process_input(struct game_object *go) {
+  SDL_Event event;
+  while (SDL_PollEvent(&event)) {
+    switch (event.type) {
+    case SDL_QUIT:
+      game_is_running = false;
+      break;
+    case SDL_KEYDOWN:
+      if (event.key.keysym.sym == SDLK_ESCAPE) {
+        game_is_running = false;
+      }
+      if (event.key.keysym.sym == SDLK_LEFT) {
+        ball.x += ball.vel_x * -.3;
+      }
+      if (event.key.keysym.sym == SDLK_RIGHT) {
+        ball.x += ball.vel_x * .3;
+      }
+      if (event.key.keysym.sym == SDLK_UP) {
+        ball.y += ball.vel_y * -.3;
+      }
+      if (event.key.keysym.sym == SDLK_DOWN) {
+        ball.y += ball.vel_y * .3;
+      }
+      break;
+    }
+  }
+  render();
+}
 
-  setup();
+///////////////////////////////////////////////////////////////////////////////
+// Main function
+///////////////////////////////////////////////////////////////////////////////
+int main(int argc, char *args[]) {
+  game_is_running = initialize_window();
 
-  while(is_game_running) {
-    handle_input_event();
+  struct game_object go = setup();
+
+  while (game_is_running) {
+    process_input(&go);
     update();
     render();
   }
 
   destroy_window();
-  
-  return EXIT_SUCCESS;
+
+  return 0;
 }
