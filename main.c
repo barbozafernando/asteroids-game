@@ -15,7 +15,7 @@ SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 
 ///////////////////////////////////////////////////////////////////////////////
-// Declare two game objects for the ball and the target
+// Declare two game objects for the player and the target
 ///////////////////////////////////////////////////////////////////////////////
 struct GameObject {
   f32 x;
@@ -24,7 +24,7 @@ struct GameObject {
   f32 height;
   f32 vel_x;
   f32 vel_y;
-} ball, target;
+} player, target;
 typedef struct GameObject GameObject;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -57,13 +57,13 @@ GameObject setup(void) {
   SDL_DisplayMode DM;
   SDL_GetCurrentDisplayMode(0, &DM);
 
-  // Initialize the ball object
-  ball.x = (WINDOW_WIDTH >> 1);
-  ball.y = (WINDOW_HEIGHT >> 1);
-  ball.width = 20;
-  ball.height = 20;
-  ball.vel_x = 80;
-  ball.vel_y = 80;
+  // Initialize the player object
+  player.x = (WINDOW_WIDTH >> 1);
+  player.y = (WINDOW_HEIGHT >> 1);
+  player.width = 20;
+  player.height = 20;
+  player.vel_x = 80;
+  player.vel_y = 80;
 
   srand(time(NULL));
 
@@ -75,7 +75,7 @@ GameObject setup(void) {
   target.vel_x = 0;
   target.vel_y = 0;
 
-  return ball;
+  return player;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -88,26 +88,26 @@ void update(void) {
   // Store the milliseconds of the current frame to be used in the next one
   // last_frame_time = SDL_GetTicks();
 
-  // Move ball as a function of delta time
-  // ball.x += ball.vel_x * delta_time;
-  // ball.y += ball.vel_y * delta_time;
+  // Move player as a function of delta time
+  // player.x += player.vel_x * delta_time;
+  // player.y += player.vel_y * delta_time;
 
-  // Check for ball collision with the window borders
-  if (ball.x < 0) {
-    ball.x = 0;
-    ball.vel_x = 0;
+  // Check for player collision with the window borders
+  if (player.x < 0) {
+    player.x = 0;
+    player.vel_x = 0;
   }
-  if (ball.x + ball.height > WINDOW_WIDTH) {
-    ball.x = WINDOW_WIDTH - ball.width;
-    ball.vel_x = 0;
+  if (player.x + player.height > WINDOW_WIDTH) {
+    player.x = WINDOW_WIDTH - player.width;
+    player.vel_x = 0;
   }
-  if (ball.y < 0) {
-    ball.y = 0;
-    ball.vel_y = 0;
+  if (player.y < 0) {
+    player.y = 0;
+    player.vel_y = 0;
   }
-  if (ball.y + ball.height > WINDOW_HEIGHT) {
-    ball.y = WINDOW_HEIGHT - ball.height;
-    ball.vel_y = 0;
+  if (player.y + player.height > WINDOW_HEIGHT) {
+    player.y = WINDOW_HEIGHT - player.height;
+    player.vel_y = 0;
   }
 }
 
@@ -118,15 +118,15 @@ void render(void) {
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   SDL_RenderClear(renderer);
 
-  // Draw a rectangle for the ball object
-  SDL_Rect ball_rect = {(u16)ball.x, (u16)ball.y, (u16)ball.width,
-                        (u16)ball.height};
+  // Draw a rectangle for the player object
+  SDL_Rect player_rect = {(u16)player.x, (u16)player.y, (u16)player.width,
+                        (u16)player.height};
 
   SDL_Rect target_rect = {(u16)target.x, (u16)target.y, (u16)target.width,
                           (u16)target.height};
 
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-  SDL_RenderFillRect(renderer, &ball_rect);
+  SDL_RenderFillRect(renderer, &player_rect);
   SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
   SDL_RenderFillRect(renderer, &target_rect);
 
@@ -157,28 +157,28 @@ void process_input(GameObject *game_obj) {
         game_is_running = false;
       }
       if (event.key.keysym.sym == SDLK_LEFT) {
-        if (ball.vel_x == 0){ 
-          ball.vel_x = 80;
+        if (player.vel_x == 0){ 
+          player.vel_x = 80;
         }
-        ball.x += ball.vel_x * -PLAYER_SPEED;
+        player.x += player.vel_x * -PLAYER_SPEED;
       }
       if (event.key.keysym.sym == SDLK_RIGHT) {
-        if (ball.vel_x == 0){ 
-          ball.vel_x = 80;
+        if (player.vel_x == 0){ 
+          player.vel_x = 80;
         }
-        ball.x += ball.vel_x * PLAYER_SPEED;
+        player.x += player.vel_x * PLAYER_SPEED;
       }
       if (event.key.keysym.sym == SDLK_UP) {
-        if (ball.vel_y == 0){ 
-          ball.vel_y = 80;
+        if (player.vel_y == 0){ 
+          player.vel_y = 80;
         }
-        ball.y += ball.vel_y * -PLAYER_SPEED;
+        player.y += player.vel_y * -PLAYER_SPEED;
       }
       if (event.key.keysym.sym == SDLK_DOWN) {
-        if (ball.vel_y == 0){ 
-          ball.vel_y = 80;
+        if (player.vel_y == 0){ 
+          player.vel_y = 80;
         }
-        ball.y += ball.vel_y * PLAYER_SPEED;
+        player.y += player.vel_y * PLAYER_SPEED;
       }
       break;
     }
