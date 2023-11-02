@@ -1,4 +1,5 @@
 #include "constants.h"
+#include "types.h"
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -15,14 +16,15 @@ SDL_Renderer *renderer = NULL;
 ///////////////////////////////////////////////////////////////////////////////
 // Declare two game objects for the ball and the paddle
 ///////////////////////////////////////////////////////////////////////////////
-struct game_object {
-  float x;
-  float y;
-  float width;
-  float height;
-  float vel_x;
-  float vel_y;
+struct GameObject {
+  f32 x;
+  f32 y;
+  f32 width;
+  f32 height;
+  f32 vel_x;
+  f32 vel_y;
 } ball, paddle;
+typedef struct GameObject GameObject;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Function to initialize our SDL window
@@ -32,9 +34,9 @@ int initialize_window(void) {
     fprintf(stderr, "Error initializing SDL.\n");
     return false;
   }
-  window = SDL_CreateWindow("A simple game loop using C & SDL",
-                            SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                            WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+  window =
+      SDL_CreateWindow("Asteroids", SDL_WINDOWPOS_CENTERED,
+                       SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
   if (!window) {
     fprintf(stderr, "Error creating SDL Window.\n");
     return false;
@@ -50,7 +52,7 @@ int initialize_window(void) {
 ///////////////////////////////////////////////////////////////////////////////
 // Setup function that runs once at the beginning of our program
 ///////////////////////////////////////////////////////////////////////////////
-struct game_object setup(void) {
+GameObject setup(void) {
   SDL_DisplayMode DM;
   SDL_GetCurrentDisplayMode(0, &DM);
 
@@ -70,7 +72,7 @@ struct game_object setup(void) {
 ///////////////////////////////////////////////////////////////////////////////
 void update(void) {
   // Get delta_time factor converted to seconds to be used to update objects
-  float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0;
+  f32 delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0;
 
   // Store the milliseconds of the current frame to be used in the next one
   last_frame_time = SDL_GetTicks();
@@ -108,6 +110,7 @@ void render(void) {
   // Draw a rectangle for the ball object
   SDL_Rect ball_rect = {(int)ball.x, (int)ball.y, (int)ball.width,
                         (int)ball.height};
+
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
   SDL_RenderFillRect(renderer, &ball_rect);
 
@@ -126,7 +129,7 @@ void destroy_window(void) {
 ///////////////////////////////////////////////////////////////////////////////
 // Function to poll SDL events and process keyboard input
 ///////////////////////////////////////////////////////////////////////////////
-void process_input(struct game_object *go) {
+void process_input(GameObject *go) {
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
     switch (event.type) {
@@ -155,13 +158,10 @@ void process_input(struct game_object *go) {
   render();
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Main function
-///////////////////////////////////////////////////////////////////////////////
-int main(int argc, char *args[]) {
+int main(int argc, char **args) {
   game_is_running = initialize_window();
 
-  struct game_object go = setup();
+  GameObject go = setup();
 
   while (game_is_running) {
     process_input(&go);
