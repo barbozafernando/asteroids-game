@@ -60,8 +60,8 @@ GameObject setup(void) {
   // Initialize the ball object
   ball.x = (WINDOW_WIDTH >> 1);
   ball.y = (WINDOW_HEIGHT >> 1);
-  ball.width = 15;
-  ball.height = 15;
+  ball.width = 20;
+  ball.height = 20;
   ball.vel_x = 80;
   ball.vel_y = 80;
 
@@ -95,19 +95,19 @@ void update(void) {
   // Check for ball collision with the window borders
   if (ball.x < 0) {
     ball.x = 0;
-    ball.vel_x = -ball.vel_x;
+    ball.vel_x = 0;
   }
   if (ball.x + ball.height > WINDOW_WIDTH) {
     ball.x = WINDOW_WIDTH - ball.width;
-    ball.vel_x = -ball.vel_x;
+    ball.vel_x = 0;
   }
   if (ball.y < 0) {
     ball.y = 0;
-    ball.vel_y = -ball.vel_y;
+    ball.vel_y = 0;
   }
   if (ball.y + ball.height > WINDOW_HEIGHT) {
     ball.y = WINDOW_HEIGHT - ball.height;
-    ball.vel_y = -ball.vel_y;
+    ball.vel_y = 0;
   }
 }
 
@@ -157,16 +157,28 @@ void process_input(GameObject *game_obj) {
         game_is_running = false;
       }
       if (event.key.keysym.sym == SDLK_LEFT) {
-        ball.x += ball.vel_x * -.3;
+        if (ball.vel_x == 0){ 
+          ball.vel_x = 80;
+        }
+        ball.x += ball.vel_x * -PLAYER_SPEED;
       }
       if (event.key.keysym.sym == SDLK_RIGHT) {
-        ball.x += ball.vel_x * .3;
+        if (ball.vel_x == 0){ 
+          ball.vel_x = 80;
+        }
+        ball.x += ball.vel_x * PLAYER_SPEED;
       }
       if (event.key.keysym.sym == SDLK_UP) {
-        ball.y += ball.vel_y * -.3;
+        if (ball.vel_y == 0){ 
+          ball.vel_y = 80;
+        }
+        ball.y += ball.vel_y * -PLAYER_SPEED;
       }
       if (event.key.keysym.sym == SDLK_DOWN) {
-        ball.y += ball.vel_y * .3;
+        if (ball.vel_y == 0){ 
+          ball.vel_y = 80;
+        }
+        ball.y += ball.vel_y * PLAYER_SPEED;
       }
       break;
     }
