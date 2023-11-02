@@ -53,13 +53,8 @@ int initialize_window(void) {
 }
 
 void spawn_target(void) {
-  srand(time(NULL));
-  target.x = rand() % (WINDOW_WIDTH + 1);
-  target.y = rand() % (WINDOW_HEIGHT + 1);
-  target.width = TARGET_SIZE;
-  target.height = TARGET_SIZE;
-  target.vel_x = 0;
-  target.vel_y = 0;
+  target.x = (u16)rand() % (WINDOW_WIDTH - TARGET_SIZE + 1);
+  target.y = (u16)rand() % (WINDOW_HEIGHT - TARGET_SIZE + 1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -77,8 +72,15 @@ void setup(void) {
   player.vel_x = PLAYER_SPEED;
   player.vel_y = PLAYER_SPEED;
 
+  srand(time(NULL));
+
   // Initialize the target object
-  spawn_target();
+  target.x = rand() % (WINDOW_WIDTH + 1);
+  target.y = rand() % (WINDOW_HEIGHT + 1);
+  target.width = TARGET_SIZE;
+  target.height = TARGET_SIZE;
+  target.vel_x = 0;
+  target.vel_y = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -114,6 +116,7 @@ void update() {
     player.vel_y = 0;
   }
 
+  // We HAVE TOUCHED
   if ((player.x + player.width >= target.x) &&
       (target.x + target.width >= player.x) &&
       (player.y + player.height >= target.y) &&
