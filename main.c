@@ -9,9 +9,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-///////////////////////////////////////////////////////////////////////////////
-// Declare two game objects for the player and the target
-///////////////////////////////////////////////////////////////////////////////
 struct GameObject {
   f32 x;
   f32 y;
@@ -22,9 +19,6 @@ struct GameObject {
 } player, target;
 typedef struct GameObject GameObject;
 
-///////////////////////////////////////////////////////////////////////////////
-// Global variables
-///////////////////////////////////////////////////////////////////////////////
 int game_is_running = false;
 int last_frame_time = 0;
 SDL_Window *window = NULL;
@@ -66,9 +60,6 @@ void draw_scoreboard(void) {
   TTF_CloseFont(font);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Function to initialize our SDL window
-///////////////////////////////////////////////////////////////////////////////
 int initialize_window(void) {
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
     fprintf(stderr, "Error initializing SDL.\n");
@@ -103,9 +94,6 @@ void spawn_target(void) {
   target.y = (u16)rand() % (WINDOW_HEIGHT - TARGET_SIZE + 1);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Setup function that runs once at the beginning of our program
-///////////////////////////////////////////////////////////////////////////////
 void setup(void) {
   SDL_DisplayMode DM;
   SDL_GetCurrentDisplayMode(0, &DM);
@@ -129,9 +117,6 @@ void setup(void) {
   target.vel_y = 0;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Update function with a fixed time step
-///////////////////////////////////////////////////////////////////////////////
 void update() {
   // Get delta_time factor converted to seconds to be used to update objects
   // f32 delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0;
@@ -162,7 +147,6 @@ void update() {
     player.vel_y = 0;
   }
 
-  // We HAVE TOUCHED
   if ((player.x + player.width >= target.x) &&
       (target.x + target.width >= player.x) &&
       (player.y + player.height >= target.y) &&
@@ -173,9 +157,6 @@ void update() {
   }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Render function to draw game objects in the SDL window
-///////////////////////////////////////////////////////////////////////////////
 void render(void) {
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   SDL_RenderClear(renderer);
@@ -193,18 +174,12 @@ void render(void) {
   SDL_RenderFillRect(renderer, &target_rect);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Function to destroy SDL window and renderer
-///////////////////////////////////////////////////////////////////////////////
 void destroy_window(void) {
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Function to poll SDL events and process keyboard input
-///////////////////////////////////////////////////////////////////////////////
 void process_input() {
   SDL_Event event;
 
