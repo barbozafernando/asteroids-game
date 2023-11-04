@@ -1,6 +1,9 @@
 #include "constants.h"
 #include "types.h"
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_render.h>
+#include <SDL2/SDL_surface.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,6 +31,40 @@ SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 GameObject player = {0};
 GameObject target = {0};
+u8 score = 0;
+
+void draw_scoreboard(void) {
+  const char *FONT_PATH = "./assets/Roboto-Regular.ttf";
+  SDL_Color text_color = {255, 255, 255};
+
+  TTF_Font *font = TTF_OpenFont(FONT_PATH, 36);
+
+  if (font == NULL) {
+    fprintf(stderr, "Font was not loaded: %s", TTF_GetError());
+  }
+
+  // Create a text buffer for the score
+  char score_text[255];
+
+  // Convert the score integer to a string
+  snprintf(score_text, sizeof(score_text), "SCORE: %d", score);
+
+  SDL_Surface *text_surface =
+      TTF_RenderText_Solid(font, score_text, text_color);
+  SDL_Texture *text_texture =
+      SDL_CreateTextureFromSurface(renderer, text_surface);
+
+  SDL_Rect scoreboard_rect = {0, 0, SCOREBOARD_WIDTH, SCOREBOARD_HEIGHT};
+
+  SDL_RenderCopy(renderer, text_texture, NULL, &scoreboard_rect);
+
+  SDL_RenderPresent(renderer);
+
+  SDL_FreeSurface(text_surface);
+  SDL_DestroyTexture(text_texture);
+
+  TTF_CloseFont(font);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Function to initialize our SDL window
@@ -37,18 +74,27 @@ int initialize_window(void) {
     fprintf(stderr, "Error initializing SDL.\n");
     return false;
   }
+
+  if (TTF_Init() == -1) {
+    fprintf(stderr, "Error initializing TTF.\n");
+  }
+
   window =
       SDL_CreateWindow("Square Eater", SDL_WINDOWPOS_CENTERED,
                        SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+
   if (!window) {
     fprintf(stderr, "Error creating SDL Window.\n");
     return false;
   }
+
   renderer = SDL_CreateRenderer(window, -1, 0);
+
   if (!renderer) {
     fprintf(stderr, "Error creating SDL Renderer.\n");
     return false;
   }
+
   return true;
 }
 
@@ -122,6 +168,7 @@ void update() {
       (player.y + player.height >= target.y) &&
       (target.y + target.height >= player.y)) {
 
+    score++;
     spawn_target();
   }
 }
@@ -144,8 +191,6 @@ void render(void) {
   SDL_RenderFillRect(renderer, &player_rect);
   SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
   SDL_RenderFillRect(renderer, &target_rect);
-
-  SDL_RenderPresent(renderer);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -162,6 +207,7 @@ void destroy_window(void) {
 ///////////////////////////////////////////////////////////////////////////////
 void process_input() {
   SDL_Event event;
+
   while (SDL_PollEvent(&event)) {
     switch (event.type) {
     case SDL_QUIT:
@@ -209,7 +255,10 @@ int main(int argc, char **args) {
     process_input();
     update();
     render();
+    draw_scoreboard();
   }
+
+  TTF_Quit();
 
   destroy_window();
 
