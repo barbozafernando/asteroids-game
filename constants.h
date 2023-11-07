@@ -9,7 +9,7 @@
 #define PLAYER_SPEED 80
 
 #define TARGET_SIZE 20
-#define PLAYER_SIZE 20
+#define PLAYER_SIZE 3
 
 #define FPS 30
 #define FRAME_TARGET_TIME (1000 / FPS)

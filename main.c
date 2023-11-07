@@ -1,6 +1,7 @@
 #include "constants.h"
 #include "types.h"
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_ttf.h>
@@ -16,6 +17,7 @@ struct GameObject {
   f32 height;
   f32 vel_x;
   f32 vel_y;
+  SDL_Texture *texture;
 } player, target;
 typedef struct GameObject GameObject;
 
@@ -26,6 +28,28 @@ SDL_Renderer *renderer = NULL;
 GameObject player = {0};
 GameObject target = {0};
 u8 score = 0;
+
+SDL_Texture *load_texture(char *filename) {
+  SDL_Texture *texture;
+
+  SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO,
+                 "Loading %s", filename);
+
+  texture = IMG_LoadTexture(renderer, filename);
+
+  return texture;
+}
+
+void blit(SDL_Texture *texture, int x, int y) {
+  SDL_Rect dest;
+
+  dest.x = x;
+  dest.y = y;
+
+  SDL_QueryTexture(texture, NULL, NULL, &dest.w, &dest.h);
+
+  SDL_RenderCopy(renderer, texture, NULL, &dest);
+}
 
 void draw_scoreboard(void) {
   const char *FONT_PATH = "./assets/Roboto-Regular.ttf";
@@ -105,6 +129,7 @@ void setup(void) {
   player.height = PLAYER_SIZE;
   player.vel_x = PLAYER_SPEED;
   player.vel_y = PLAYER_SPEED;
+  player.texture = load_texture("assets/player_texture.png");
 
   srand(time(NULL));
 
@@ -118,17 +143,6 @@ void setup(void) {
 }
 
 void update() {
-  // Get delta_time factor converted to seconds to be used to update objects
-  // f32 delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0;
-
-  // Store the milliseconds of the current frame to be used in the next one
-  // last_frame_time = SDL_GetTicks();
-
-  // Move player as a function of delta time
-  // player.x += player.vel_x * delta_time;
-  // player.y += player.vel_y * delta_time;
-
-  // Check for player collision with the window borders
   if (player.x < 0) {
     player.x = 0;
     player.vel_x = 0;
@@ -230,6 +244,7 @@ int main(int argc, char **args) {
     process_input();
     update();
     render();
+    blit(player.texture, player.x, player.y);
     draw_scoreboard();
   }
 
