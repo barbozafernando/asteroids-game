@@ -29,7 +29,7 @@ GameObject player = {0};
 GameObject target = {0};
 u8 score = 0;
 
-SDL_Texture *load_texture(char *filename) {
+SDL_Texture *load_texture(const char *filename) {
   SDL_Texture *texture;
 
   SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO,
@@ -208,25 +208,25 @@ void process_input() {
       }
       if (event.key.keysym.sym == SDLK_LEFT) {
         if (player.vel_x == 0) {
-          player.vel_x = 80;
+          player.vel_x = PLAYER_SPEED;
         }
-        player.x += player.vel_x * -.3;
+        player.x += player.vel_x++;
       }
       if (event.key.keysym.sym == SDLK_RIGHT) {
         if (player.vel_x == 0) {
-          player.vel_x = 80;
+          player.vel_x = PLAYER_SPEED;
         }
         player.x += player.vel_x * .3;
       }
       if (event.key.keysym.sym == SDLK_UP) {
         if (player.vel_y == 0) {
-          player.vel_y = 80;
+          player.vel_y = PLAYER_SPEED;
         }
         player.y += player.vel_y * -.3;
       }
       if (event.key.keysym.sym == SDLK_DOWN) {
         if (player.vel_y == 0) {
-          player.vel_y = 80;
+          player.vel_y = PLAYER_SPEED;
         }
         player.y += player.vel_y * .3;
       }
