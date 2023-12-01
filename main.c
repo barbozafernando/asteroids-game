@@ -210,7 +210,7 @@ void process_input() {
         if (player.vel_x == 0) {
           player.vel_x = PLAYER_SPEED;
         }
-        player.x += player.vel_x++;
+        player.x += player.vel_x * -.3;
       }
       if (event.key.keysym.sym == SDLK_RIGHT) {
         if (player.vel_x == 0) {
