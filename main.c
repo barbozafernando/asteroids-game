@@ -28,6 +28,7 @@ SDL_Renderer *renderer = NULL;
 GameObject player = {0};
 GameObject target = {0};
 u8 score = 0;
+f32 delta_time;
 
 SDL_Texture *load_texture(const char *filename) {
   SDL_Texture *texture;
@@ -143,22 +144,25 @@ void setup(void) {
 }
 
 void update() {
-  if (player.x < 0) {
-    player.x = 0;
-    player.vel_x = 0;
-  }
   if (player.x + player.width > WINDOW_WIDTH) {
-    player.x = WINDOW_WIDTH - player.width;
-    player.vel_x = 0;
+    player.x = 0;
   }
-  if (player.y < 0) {
-    player.y = 0;
-    player.vel_y = 0;
-  }
+  // printf("X: %.2f\n", player.x);
+  printf("Y: %.2f\n", player.y);
 
   if (player.y + player.height > WINDOW_HEIGHT) {
-    player.y = WINDOW_HEIGHT - player.height;
-    player.vel_y = 0;
+    player.y = 0;
+  }
+
+  // Get a delta time factor converted to seconds to be used to update my
+  // objects later
+  delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
+
+  last_frame_time = SDL_GetTicks();
+
+  for (int i = 0; i < 4; i++) {
+    player.x += FPS * delta_time;
+    player.y += FPS * delta_time;
   }
 
   if ((player.x + player.width >= target.x) &&
@@ -210,25 +214,18 @@ void process_input() {
         if (player.vel_x == 0) {
           player.vel_x = PLAYER_SPEED;
         }
-        player.x += player.vel_x * -.3;
+        // player.x += FPS * delta_time;
+        player.x -= (FPS * delta_time) - -.3f;
       }
       if (event.key.keysym.sym == SDLK_RIGHT) {
-        if (player.vel_x == 0) {
-          player.vel_x = PLAYER_SPEED;
-        }
-        player.x += player.vel_x * .3;
+        player.x += player.vel_x * .3f;
       }
       if (event.key.keysym.sym == SDLK_UP) {
-        if (player.vel_y == 0) {
-          player.vel_y = PLAYER_SPEED;
-        }
-        player.y += player.vel_y * -.3;
+        player.vel_y = PLAYER_SPEED;
+        player.y += player.vel_y * -.3f;
       }
       if (event.key.keysym.sym == SDLK_DOWN) {
-        if (player.vel_y == 0) {
-          player.vel_y = PLAYER_SPEED;
-        }
-        player.y += player.vel_y * .3;
+        player.y += player.vel_y * .3f;
       }
       break;
     }
