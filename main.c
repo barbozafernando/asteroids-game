@@ -29,6 +29,7 @@ GameObject player = {0};
 GameObject target = {0};
 u8 score = 0;
 f32 delta_time;
+TTF_Font *font36;
 
 SDL_Texture *load_texture(const char *filename) {
   SDL_Texture *texture;
@@ -56,9 +57,9 @@ void draw_scoreboard(void) {
   const char *FONT_PATH = "./assets/Roboto-Regular.ttf";
   SDL_Color text_color = {255, 255, 255};
 
-  TTF_Font *font = TTF_OpenFont(FONT_PATH, 36);
+  font36 = TTF_OpenFont(FONT_PATH, 36);
 
-  if (font == NULL) {
+  if (font36 == NULL) {
     fprintf(stderr, "Font was not loaded: %s", TTF_GetError());
   }
 
@@ -69,7 +70,7 @@ void draw_scoreboard(void) {
   snprintf(score_text, sizeof(score_text), "SCORE: %d", score);
 
   SDL_Surface *text_surface =
-      TTF_RenderText_Solid(font, score_text, text_color);
+      TTF_RenderText_Solid(font36, score_text, text_color);
   SDL_Texture *text_texture =
       SDL_CreateTextureFromSurface(renderer, text_surface);
 
@@ -82,7 +83,7 @@ void draw_scoreboard(void) {
   SDL_FreeSurface(text_surface);
   SDL_DestroyTexture(text_texture);
 
-  TTF_CloseFont(font);
+  TTF_CloseFont(font36);
 }
 
 int initialize_window(void) {
@@ -147,8 +148,6 @@ void update() {
   if (player.x + player.width > WINDOW_WIDTH) {
     player.x = 0;
   }
-  // printf("X: %.2f\n", player.x);
-  printf("Y: %.2f\n", player.y);
 
   if (player.y + player.height > WINDOW_HEIGHT) {
     player.y = 0;
@@ -160,10 +159,10 @@ void update() {
 
   last_frame_time = SDL_GetTicks();
 
-  for (int i = 0; i < 4; i++) {
-    player.x += FPS * delta_time;
-    player.y += FPS * delta_time;
-  }
+  // for (int i = 0; i < 4; i++) {
+  //   player.x += FPS * delta_time;
+  //   player.y += FPS * delta_time;
+  // }
 
   if ((player.x + player.width >= target.x) &&
       (target.x + target.width >= player.x) &&
@@ -214,8 +213,7 @@ void process_input() {
         if (player.vel_x == 0) {
           player.vel_x = PLAYER_SPEED;
         }
-        // player.x += FPS * delta_time;
-        player.x -= (FPS * delta_time) - -.3f;
+        player.x -= player.vel_x * .3f;
       }
       if (event.key.keysym.sym == SDLK_RIGHT) {
         player.x += player.vel_x * .3f;
