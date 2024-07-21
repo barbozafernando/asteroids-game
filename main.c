@@ -36,7 +36,7 @@ typedef struct {
 
 void draw_scoreboard(Game* game) {
   const char *FONT_PATH = "./assets/Roboto-Regular.ttf";
-  SDL_Color text_color = {255, 255, 255};
+  SDL_Color text_color = {255, 255, 255, 255};
 
   game->font36 = TTF_OpenFont(FONT_PATH, 36);
 
@@ -204,7 +204,7 @@ void process_input(Game* game) {
   }
 }
 
-int main(int argc, char **args) {
+int main() {
   static Game game_instance;
   static Player player;
   static Target target;
