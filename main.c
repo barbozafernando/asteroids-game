@@ -211,19 +211,23 @@ void process_input(Game* game) {
     case SDL_KEYDOWN:
       if (event.key.keysym.sym == SDLK_ESCAPE) {
         game->game_is_running = false;
+        break;
       }
       if (event.key.keysym.sym == SDLK_LEFT) {
         if (game->player.vel_x == 0) {
           game->player.vel_x = PLAYER_SPEED;
         }
         game->player.x -= game->player.vel_x * .3f;
+        break;
       }
       if (event.key.keysym.sym == SDLK_RIGHT) {
         game->player.x += game->player.vel_x * .3f;
+        break;
       }
       if (event.key.keysym.sym == SDLK_UP) {
         game->player.vel_y = PLAYER_SPEED;
         game->player.y += game->player.vel_y * -.3f;
+        break;
       }
       if (event.key.keysym.sym == SDLK_DOWN) {
         game->player.y += game->player.vel_y * .3f;
