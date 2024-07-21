@@ -1,65 +1,46 @@
-#include "constants.h"
-#include "types.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <time.h>
+
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_video.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_surface.h>
-#include <SDL2/SDL_ttf.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 
-struct GameObject {
-  f32 x;
-  f32 y;
-  f32 width;
-  f32 height;
-  f32 vel_x;
-  f32 vel_y;
-  SDL_Texture *texture;
-} player, target;
-typedef struct GameObject GameObject;
+#include "constants.h"
 
-int game_is_running = false;
-int last_frame_time = 0;
-SDL_Window *window = NULL;
-SDL_Renderer *renderer = NULL;
-GameObject player = {0};
-GameObject target = {0};
-u8 score = 0;
-f32 delta_time;
-TTF_Font *font36;
+typedef struct {
+  float x;
+  float y;
+  float width;
+  float height;
+  float vel_x;
+  float vel_y;
+} Player, Target;
 
-SDL_Texture *load_texture(const char *filename) {
-  SDL_Texture *texture;
+typedef struct {
+  int           game_is_running;
+  int           last_frame_time;
+  uint8_t       score;
+  float         delta_time;
+  TTF_Font*     font36;
+  SDL_Window*   window;
+  SDL_Renderer* renderer;
+  Player        player;
+  Player        target;
+} Game;
 
-  SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO,
-                 "Loading %s", filename);
-
-  texture = IMG_LoadTexture(renderer, filename);
-
-  return texture;
-}
-
-void blit(SDL_Texture *texture, int x, int y) {
-  SDL_Rect dest;
-
-  dest.x = x;
-  dest.y = y;
-
-  SDL_QueryTexture(texture, NULL, NULL, &dest.w, &dest.h);
-
-  SDL_RenderCopy(renderer, texture, NULL, &dest);
-}
-
-void draw_scoreboard(void) {
+void draw_scoreboard(Game* game) {
   const char *FONT_PATH = "./assets/Roboto-Regular.ttf";
   SDL_Color text_color = {255, 255, 255};
 
-  font36 = TTF_OpenFont(FONT_PATH, 36);
+  game->font36 = TTF_OpenFont(FONT_PATH, 36);
 
-  if (font36 == NULL) {
+  if (game->font36 == NULL) {
     fprintf(stderr, "Font was not loaded: %s", TTF_GetError());
   }
 
@@ -67,26 +48,26 @@ void draw_scoreboard(void) {
   char score_text[255];
 
   // Convert the score integer to a string
-  snprintf(score_text, sizeof(score_text), "SCORE: %d", score);
+  snprintf(score_text, sizeof(score_text), "SCORE: %d", game->score);
 
   SDL_Surface *text_surface =
-      TTF_RenderText_Solid(font36, score_text, text_color);
+      TTF_RenderText_Solid(game->font36, score_text, text_color);
   SDL_Texture *text_texture =
-      SDL_CreateTextureFromSurface(renderer, text_surface);
+      SDL_CreateTextureFromSurface(game->renderer, text_surface);
 
   SDL_Rect scoreboard_rect = {0, 0, SCOREBOARD_WIDTH, SCOREBOARD_HEIGHT};
 
-  SDL_RenderCopy(renderer, text_texture, NULL, &scoreboard_rect);
+  SDL_RenderCopy(game->renderer, text_texture, NULL, &scoreboard_rect);
 
-  SDL_RenderPresent(renderer);
+  SDL_RenderPresent(game->renderer);
 
   SDL_FreeSurface(text_surface);
   SDL_DestroyTexture(text_texture);
 
-  TTF_CloseFont(font36);
+  TTF_CloseFont(game->font36);
 }
 
-int initialize_window(void) {
+int initialize_window(Game* game) {
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
     fprintf(stderr, "Error initializing SDL.\n");
     return false;
@@ -96,18 +77,18 @@ int initialize_window(void) {
     fprintf(stderr, "Error initializing TTF.\n");
   }
 
-  window =
+  game->window =
       SDL_CreateWindow("Square Eater", SDL_WINDOWPOS_CENTERED,
                        SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
 
-  if (!window) {
+  if (!game->window) {
     fprintf(stderr, "Error creating SDL Window.\n");
     return false;
   }
 
-  renderer = SDL_CreateRenderer(window, -1, 0);
+  game->renderer = SDL_CreateRenderer(game->window, -1, 0);
 
-  if (!renderer) {
+  if (!game->renderer) {
     fprintf(stderr, "Error creating SDL Renderer.\n");
     return false;
   }
@@ -115,115 +96,108 @@ int initialize_window(void) {
   return true;
 }
 
-void spawn_target(void) {
-  target.x = (u16)rand() % (WINDOW_WIDTH - TARGET_SIZE + 1);
-  target.y = (u16)rand() % (WINDOW_HEIGHT - TARGET_SIZE + 1);
+void spawn_target(Game* game) {
+  game->target.x = (uint16_t)rand() % (WINDOW_WIDTH - TARGET_SIZE + 1);
+  game->target.y = (uint16_t)rand() % (WINDOW_HEIGHT - TARGET_SIZE + 1);
 }
 
-void setup(void) {
+void setup(Game* game) {
   SDL_DisplayMode DM;
   SDL_GetCurrentDisplayMode(0, &DM);
 
   // Initialize the player object
-  player.x = (WINDOW_WIDTH >> 1);
-  player.y = (WINDOW_HEIGHT >> 1);
-  player.width = PLAYER_SIZE;
-  player.height = PLAYER_SIZE;
-  player.vel_x = PLAYER_SPEED;
-  player.vel_y = PLAYER_SPEED;
-  player.texture = load_texture("assets/player_texture.png");
+  game->player.x = (WINDOW_WIDTH >> 1);
+  game->player.y = (WINDOW_HEIGHT >> 1);
+  game->player.width = PLAYER_SIZE;
+  game->player.height = PLAYER_SIZE;
+  game->player.vel_x = PLAYER_SPEED;
+  game->player.vel_y = PLAYER_SPEED;
 
   srand(time(NULL));
 
   // Initialize the target object
-  target.x = rand() % (WINDOW_WIDTH + 1);
-  target.y = rand() % (WINDOW_HEIGHT + 1);
-  target.width = TARGET_SIZE;
-  target.height = TARGET_SIZE;
-  target.vel_x = 0;
-  target.vel_y = 0;
+  game->target.x = rand() % (WINDOW_WIDTH + 1);
+  game->target.y = rand() % (WINDOW_HEIGHT + 1);
+  game->target.width = TARGET_SIZE;
+  game->target.height = TARGET_SIZE;
+  game->target.vel_x = 0;
+  game->target.vel_y = 0;
 }
 
-void update() {
-  if (player.x + player.width > WINDOW_WIDTH) {
-    player.x = 0;
+void update(Game* game) {
+  if (game->player.x + game->player.width > WINDOW_WIDTH) {
+    game->player.x = 0;
   }
 
-  if (player.y + player.height > WINDOW_HEIGHT) {
-    player.y = 0;
+  if (game->player.y + game->player.height > WINDOW_HEIGHT) {
+    game->player.y = 0;
   }
 
   // Get a delta time factor converted to seconds to be used to update my
   // objects later
-  delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
+  game->delta_time = (SDL_GetTicks() - game->last_frame_time) / 1000.0f;
 
-  last_frame_time = SDL_GetTicks();
+  game->last_frame_time = SDL_GetTicks();
 
   // for (int i = 0; i < 4; i++) {
   //   player.x += FPS * delta_time;
   //   player.y += FPS * delta_time;
   // }
 
-  if ((player.x + player.width >= target.x) &&
-      (target.x + target.width >= player.x) &&
-      (player.y + player.height >= target.y) &&
-      (target.y + target.height >= player.y)) {
+  if ((game->player.x + game->player.width >= game->target.x) &&
+      (game->target.x + game->target.width >= game->player.x) &&
+      (game->player.y + game->player.height >= game->target.y) &&
+      (game->target.y + game->target.height >= game->player.y)) {
 
-    score++;
-    spawn_target();
+    game->score++;
+    spawn_target(game);
   }
 }
 
-void render(void) {
-  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-  SDL_RenderClear(renderer);
+void render(Game* game) {
+  SDL_SetRenderDrawColor(game->renderer, 0, 0, 0, 255);
+  SDL_RenderClear(game->renderer);
 
   // Draw a rectangle for the player object
-  SDL_Rect player_rect = {(u16)player.x, (u16)player.y, (u16)player.width,
-                          (u16)player.height};
+  SDL_Rect player_rect = {(uint16_t)game->player.x, (uint16_t)game->player.y, (uint16_t)game->player.width,
+                          (uint16_t)game->player.height};
 
-  SDL_Rect target_rect = {(u16)target.x, (u16)target.y, (u16)target.width,
-                          (u16)target.height};
+  SDL_Rect target_rect = {(uint16_t)game->target.x, (uint16_t)game->target.y, (uint16_t)game->target.width,
+                          (uint16_t)game->target.height};
 
-  SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-  SDL_RenderFillRect(renderer, &player_rect);
-  SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-  SDL_RenderFillRect(renderer, &target_rect);
+  SDL_SetRenderDrawColor(game->renderer, 255, 255, 255, 255);
+  SDL_RenderFillRect(game->renderer, &player_rect);
+  SDL_SetRenderDrawColor(game->renderer, 255, 0, 0, 255);
+  SDL_RenderFillRect(game->renderer, &target_rect);
 }
 
-void destroy_window(void) {
-  SDL_DestroyRenderer(renderer);
-  SDL_DestroyWindow(window);
-  SDL_Quit();
-}
-
-void process_input() {
+void process_input(Game* game) {
   SDL_Event event;
 
   while (SDL_PollEvent(&event)) {
     switch (event.type) {
     case SDL_QUIT:
-      game_is_running = false;
+      game->game_is_running = false;
       break;
     case SDL_KEYDOWN:
       if (event.key.keysym.sym == SDLK_ESCAPE) {
-        game_is_running = false;
+        game->game_is_running = false;
       }
       if (event.key.keysym.sym == SDLK_LEFT) {
-        if (player.vel_x == 0) {
-          player.vel_x = PLAYER_SPEED;
+        if (game->player.vel_x == 0) {
+          game->player.vel_x = PLAYER_SPEED;
         }
-        player.x -= player.vel_x * .3f;
+        game->player.x -= game->player.vel_x * .3f;
       }
       if (event.key.keysym.sym == SDLK_RIGHT) {
-        player.x += player.vel_x * .3f;
+        game->player.x += game->player.vel_x * .3f;
       }
       if (event.key.keysym.sym == SDLK_UP) {
-        player.vel_y = PLAYER_SPEED;
-        player.y += player.vel_y * -.3f;
+        game->player.vel_y = PLAYER_SPEED;
+        game->player.y += game->player.vel_y * -.3f;
       }
       if (event.key.keysym.sym == SDLK_DOWN) {
-        player.y += player.vel_y * .3f;
+        game->player.y += game->player.vel_y * .3f;
       }
       break;
     }
@@ -231,21 +205,30 @@ void process_input() {
 }
 
 int main(int argc, char **args) {
-  game_is_running = initialize_window();
+  static Game game_instance;
+  static Player player;
+  static Target target;
 
-  setup();
+  game_instance.game_is_running = initialize_window(&game_instance);
+  game_instance.last_frame_time = 0;
+  game_instance.score           = 0;
+  game_instance.delta_time      = 0.0;
+  game_instance.player          = player;
+  game_instance.target          = target;
 
-  while (game_is_running) {
-    process_input();
-    update();
-    render();
-    blit(player.texture, player.x, player.y);
-    draw_scoreboard();
+  setup(&game_instance);
+
+  while (game_instance.game_is_running) {
+    process_input(&game_instance);
+    update(&game_instance);
+    render(&game_instance);
+    draw_scoreboard(&game_instance);
   }
 
   TTF_Quit();
-
-  destroy_window();
+  SDL_DestroyRenderer(game_instance.renderer);
+  SDL_DestroyWindow(game_instance.window);
+  SDL_Quit();
 
   return 0;
 }
